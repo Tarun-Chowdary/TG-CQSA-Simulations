@@ -1,0 +1,5 @@
+qiskit 
+qiskit-aer 
+numpy 
+matplotlib
+detector_utils_corrected
