@@ -19,27 +19,27 @@ K_CLUSTER = 8
 
 @dataclass
 class ClientRoster:
-    """
-    Defines which clients are honest vs. which kind of Byzantine, and
-    (for rotating attackers) WHEN they are actively attacking.
-    """
-    n_clients: int
-    persistent_byzantine: set
-    colluding_group: set
-    rotating_attackers: dict   # client_id -> (period_tau, phase_offset)
+    def __init__(self, n_clients, persistent_byzantine, colluding_group, rotating_attackers=None):
+        self.persistent_byzantine = persistent_byzantine
+        self.colluding_group = colluding_group
+        self.rotating_attackers = rotating_attackers or {}
+        # ...
 
-    def is_attacking_this_round(self, client_id: int, round_t: int) -> bool:
-        if client_id in self.persistent_byzantine:
+    def is_attacking_this_round(self, client, t):
+        if client in self.persistent_byzantine:
             return True
-        if client_id in self.rotating_attackers:
-            tau, phase_offset = self.rotating_attackers[client_id]
-            cycle_pos = (round_t + phase_offset) % (2 * tau)
-            return cycle_pos < tau
+        if client in self.rotating_attackers:
+            tau, offset = self.rotating_attackers[client]
+            # attacking on rounds where (t+offset) // tau is odd
+            return ((t + offset) // tau) % 2 == 1
         return False
 
-    def all_attackers_this_round(self, round_t: int) -> set:
-        return {c for c in range(self.n_clients) if self.is_attacking_this_round(c, round_t)}
-
+    def all_attackers_this_round(self, t):
+        attackers = set(self.persistent_byzantine)
+        for c, (tau, offset) in self.rotating_attackers.items():
+            if self.is_attacking_this_round(c, t):
+                attackers.add(c)
+        return attackers
 
 def fisher_yates_clusters(n_clients: int, k: int, rng: np.random.Generator):
     perm = rng.permutation(n_clients)

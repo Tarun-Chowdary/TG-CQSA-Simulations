@@ -3,3 +3,7 @@ qiskit-aer
 numpy 
 matplotlib
 detector_utils_corrected
+shap
+networkx
+dataclasses
+collections
